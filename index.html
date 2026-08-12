@@ -52,6 +52,11 @@
   }
   .logo-chip img { height: 36px; width: auto; max-width: 140px; object-fit: contain; display: block; filter: brightness(0) invert(1); }
   .logo-chip--lg img { height: 72px; max-width: 260px; }
+  /* For logos that are photos/JPGs with a baked-in background rather than
+     transparent line-art — brightness(0) invert(1) would just turn the
+     whole image white. Shown in natural color instead, un-boxed, so it's
+     at least visible rather than blank. */
+  .logo-chip--natural img { filter: none !important; }
   .header { text-align: center; margin-bottom: 0; font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif; }
   .header h1 {
     margin: 0 0 3px;
@@ -293,8 +298,13 @@ const EVENT_CONFIG = {
   venue: "MachUnion Laboratories, Inc., Block 13, TS Cruz Subdivision, Lot 13 Lotus, Las Piñas, Metro Manila",
   orgName: "RainPhil Inc.",
   logoUrl: "https://rainphil.com/images/rainphil-logo.png",
+  // Each entry is either a plain URL string (gets the same white-silhouette
+  // treatment as the company logo above — use this for a transparent-
+  // background logo) or { url, invert: false } for a logo that's a photo/
+  // JPG with its own background baked in — shown in natural color instead,
+  // since inverting it would just turn the whole image white.
   partnerLogos: [
-    "https://i0.wp.com/machunion.com/wp-content/uploads/2024/11/machunion-logo-small.jpg?fit=168%2C138&ssl=1",
+    { url: "https://i0.wp.com/machunion.com/wp-content/uploads/2024/11/machunion-logo-small.jpg?fit=168%2C138&ssl=1", invert: false },
     "https://e7.pngegg.com/pngimages/926/717/png-clipart-logo-waters-corporation-waters-technologies-corporation-logo-waters-corporation.png"
   ],
   webAppUrl: "https://script.google.com/macros/s/AKfycbx0fOMWlJnimqhbFo6DTeWFYQr1qUT4NfIqRiIClBCmuPuxLN-Xx7O0wQNwlg8XNe5V/exec"
@@ -307,20 +317,24 @@ document.getElementById("eventAddress").textContent = EVENT_CONFIG.venue;
 document.getElementById("eventDateTime").innerHTML =
   EVENT_CONFIG.eventDateDisplay + ' <span class="sep">|</span> ' + EVENT_CONFIG.eventTimeDisplay;
 // Build logo bar: company logo, then every partner logo, all in one row,
-// no divider between them. Every logo — company and partner alike — gets
-// the same brightness(0) invert(1) treatment (see .logo-chip img above),
-// rendering it as a plain white silhouette so the whole row reads as one
-// consistent mark on the dark banner, regardless of each logo's original
-// colors.
+// no divider between them. By default every logo gets the same
+// brightness(0) invert(1) treatment (see .logo-chip img above), rendering
+// it as a plain white silhouette so the row reads as one consistent mark
+// on the dark banner — EXCEPT entries explicitly marked { invert: false },
+// which show in their natural color instead (for logos that are photos
+// with a background baked in, where inverting would just go blank white).
 (function renderLogos() {
   const bar = document.getElementById("logoBar");
   const allLogos = [];
   if (EVENT_CONFIG.logoUrl) allLogos.push(EVENT_CONFIG.logoUrl);
   const partners = (EVENT_CONFIG.partnerLogos || []).filter(Boolean);
-  allLogos.concat(partners).forEach(url => bar.appendChild(makeChip(url)));
-  function makeChip(url, large) {
+  allLogos.concat(partners).forEach(entry => bar.appendChild(makeChip(entry)));
+  function makeChip(entry, large) {
+    const isObj = entry && typeof entry === "object";
+    const url = isObj ? entry.url : entry;
+    const invert = isObj && entry.invert === false ? false : true;
     const chip = document.createElement("div");
-    chip.className = "logo-chip" + (large ? " logo-chip--lg" : "");
+    chip.className = "logo-chip" + (large ? " logo-chip--lg" : "") + (invert ? "" : " logo-chip--natural");
     const img = document.createElement("img");
     img.src = url;
     img.alt = "logo";

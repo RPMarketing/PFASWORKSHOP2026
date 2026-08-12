@@ -52,19 +52,6 @@
   }
   .logo-chip img { height: 36px; width: auto; max-width: 140px; object-fit: contain; display: block; filter: brightness(0) invert(1); }
   .logo-chip--lg img { height: 72px; max-width: 260px; }
-  /* Partner logos are ordinary photos/JPGs with their own background baked
-     in, not transparent line-art — the brightness(0) invert(1) treatment
-     above (built for a plain white silhouette) would just render them as a
-     blank white box. Give them a white pill instead so their real colors
-     and detail stay visible against the dark banner. */
-  .logo-chip--partner {
-    background: #fff;
-    padding: 6px 12px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  }
-  .logo-chip--partner img { height: 34px; max-width: 120px; filter: none !important; }
-  .logo-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.25); }
   .header { text-align: center; margin-bottom: 0; font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif; }
   .header h1 {
     margin: 0 0 3px;
@@ -174,7 +161,6 @@
     .field { flex: 1 1 100%; }
     .header h1 { font-size: 20px; }
     .logo-chip img { height: 30px; max-width: 110px; }
-    .logo-chip--partner img { height: 26px; max-width: 90px; }
     .banner { padding: 24px 12px 36px; }
   }
 </style>
@@ -320,29 +306,21 @@ document.getElementById("eventSubtitle").innerHTML =
 document.getElementById("eventAddress").textContent = EVENT_CONFIG.venue;
 document.getElementById("eventDateTime").innerHTML =
   EVENT_CONFIG.eventDateDisplay + ' <span class="sep">|</span> ' + EVENT_CONFIG.eventTimeDisplay;
-// Build logo bar: company logo (rendered as a white silhouette, matches the
-// banner treatment), then a divider, then each partner logo in its own
-// white pill — partner logos are ordinary photos/JPGs with real color and a
-// baked-in background, so they get logo-chip--partner instead of the
-// invert-to-white treatment (see the CSS comment above .logo-chip--partner).
+// Build logo bar: company logo, then every partner logo, all in one row,
+// no divider between them. Every logo — company and partner alike — gets
+// the same brightness(0) invert(1) treatment (see .logo-chip img above),
+// rendering it as a plain white silhouette so the whole row reads as one
+// consistent mark on the dark banner, regardless of each logo's original
+// colors.
 (function renderLogos() {
   const bar = document.getElementById("logoBar");
   const allLogos = [];
   if (EVENT_CONFIG.logoUrl) allLogos.push(EVENT_CONFIG.logoUrl);
   const partners = (EVENT_CONFIG.partnerLogos || []).filter(Boolean);
-  if (allLogos.length && partners.length) {
-    allLogos.forEach(url => bar.appendChild(makeChip(url)));
-    const div = document.createElement("div");
-    div.className = "logo-divider";
-    bar.appendChild(div);
-    partners.forEach(url => bar.appendChild(makeChip(url, false, true)));
-  } else {
-    allLogos.forEach(url => bar.appendChild(makeChip(url)));
-    partners.forEach(url => bar.appendChild(makeChip(url, false, true)));
-  }
-  function makeChip(url, large, isPartner) {
+  allLogos.concat(partners).forEach(url => bar.appendChild(makeChip(url)));
+  function makeChip(url, large) {
     const chip = document.createElement("div");
-    chip.className = "logo-chip" + (large ? " logo-chip--lg" : "") + (isPartner ? " logo-chip--partner" : "");
+    chip.className = "logo-chip" + (large ? " logo-chip--lg" : "");
     const img = document.createElement("img");
     img.src = url;
     img.alt = "logo";

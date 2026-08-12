@@ -79,7 +79,16 @@
     font-size: 0.85em;
     opacity: 0.9;
   }
-  .header .address-line { color: #eef6f4; font-size: 15px; font-weight: 700; line-height: 1.3; margin: 0 0 3px; }
+  .header .address-line {
+    color: #eef6f4; font-weight: 700; line-height: 1.3; margin: 0 0 3px;
+    white-space: nowrap;
+    /* Scales down smoothly so this specific (fairly long) address stays on
+       one line down to phone-ish widths. Below ~480px there isn't enough
+       room to keep it on one line at a legible size, so it falls back to
+       wrapping normally instead of shrinking to unreadable — see the
+       max-width:480px override below. */
+    font-size: clamp(8px, calc(1.65vw - 0.4px), 10.5px);
+  }
   .header .datetime-line { color: #eef6f4; font-size: 15px; font-weight: 700; letter-spacing: .01em; margin: 0; line-height: 1.3; }
   .header .datetime-line .sep { color: #eef6f4; margin: 0 8px; font-weight: 500; }
   .footer {
@@ -167,6 +176,9 @@
     .header h1 { font-size: 20px; }
     .logo-chip img { height: 30px; max-width: 110px; }
     .banner { padding: 24px 12px 36px; }
+    /* Not enough room to keep this specific address on one line at a
+       readable size below this width — wrap normally instead. */
+    .header .address-line { white-space: normal; font-size: 13px; }
   }
 </style>
 </head>
@@ -284,7 +296,7 @@
   </div>
   <div class="footer">
     <div class="tagline">RainLab. Building Connections. Driving Discoveries.</div>
-    <div>Presented by <strong>RainPhil.com</strong></div>
+    <div>Presented by <strong>RainPhil Inc.</strong> and <strong>MachUnion Laboratories Inc.</strong></div>
   </div>
 </div>
 <script>

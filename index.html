@@ -134,6 +134,16 @@
     display: flex; gap: 10px; align-items: flex-start;
   }
   .consent input { width: auto; margin-top: 3px; }
+  .consent-readmore-btn {
+    background: none; border: none; padding: 0; margin-left: 4px;
+    color: var(--navy); font-weight: 700; text-decoration: underline;
+    font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .consent-full-text {
+    display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+    font-size: 12.5px; line-height: 1.6; color: var(--muted);
+  }
+  .consent-full-text.show { display: block; }
   button.submit {
     width: 100%; margin-top: 24px; padding: 14px; border: none; border-radius: 8px;
     background: var(--navy); color: #fff; font-size: 15px; font-weight: 700;
@@ -271,6 +281,26 @@
           <textarea name="foodRestrictions" placeholder="e.g. vegetarian, allergies, halal..."></textarea>
         </div>
       </div>
+
+      <!-- Data Privacy consent — separate from the photo/video consent
+           below on purpose: these cover two different things, and bundling
+           them into one checkbox would make both weaker. -->
+      <div class="consent">
+        <input type="checkbox" id="dataPrivacyConsent" name="dataPrivacyConsent" required>
+        <div style="flex:1;">
+          <label for="dataPrivacyConsent" style="margin:0; font-weight:400;">
+            I consent to <span class="orgLabelInline2">RainPhil Inc.</span>'s collection, use, and processing of my personal data for this event, in accordance with the Data Privacy Act of 2012 (RA 10173).
+            <button type="button" class="consent-readmore-btn" id="dataPrivacyReadMoreBtn">Read more</button>
+            <span class="req">*</span>
+          </label>
+          <div class="consent-full-text" id="dataPrivacyFullText">
+            By registering for this event, I understand that <span class="orgLabelInline2">RainPhil Inc.</span> will collect and process my personal information (including my name, contact number, email address, institution, position, and profession details) for the following purposes: (a) processing and managing my event registration and attendance; (b) communicating with me about this event, including confirmations, reminders, and updates; (c) issuing certificates and, where applicable, submitting attendance records to the Professional Regulation Commission (PRC) for continuing professional development credit; (d) internal reporting and record-keeping; (e) where applicable, sharing relevant registration details with event partners, sponsors, or co-organizers for purposes connected to this event; and (f) informing me about future RainPhil Inc. events, trainings, or offers that may be of interest to me.
+            <br><br>
+            I understand that my data will be kept confidential, will not be sold to third parties, and will be retained only for as long as necessary for the purposes stated above or as required by law. I may contact RainPhil Inc. to access, correct, or request deletion of my personal data, subject to legal and regulatory retention requirements, in accordance with the Data Privacy Act of 2012 (RA 10173).
+          </div>
+        </div>
+      </div>
+
       <div class="consent">
         <input type="checkbox" id="consent" name="consent" required>
         <label for="consent" style="margin:0; font-weight:400;">
@@ -322,6 +352,7 @@ const EVENT_CONFIG = {
   webAppUrl: "https://script.google.com/macros/s/AKfycbx0fOMWlJnimqhbFo6DTeWFYQr1qUT4NfIqRiIClBCmuPuxLN-Xx7O0wQNwlg8XNe5V/exec"
 };
 document.getElementById("orgLabelInline").textContent = EVENT_CONFIG.orgName;
+document.querySelectorAll(".orgLabelInline2").forEach(el => el.textContent = EVENT_CONFIG.orgName);
 document.getElementById("eventTitle").textContent = EVENT_CONFIG.eventName;
 document.getElementById("eventSubtitle").innerHTML =
   EVENT_CONFIG.eventSubtitle + (EVENT_CONFIG.eventSubtitle2 ? '<br><span class="line2">' + EVENT_CONFIG.eventSubtitle2 + '</span>' : "");
@@ -362,6 +393,11 @@ document.getElementById("professionCode").addEventListener("change", function ()
   document.getElementById("licenseField").style.display = show ? "block" : "none";
   document.getElementById("licenseExpirationField").style.display = show ? "block" : "none";
 });
+document.getElementById("dataPrivacyReadMoreBtn").addEventListener("click", function () {
+  const fullText = document.getElementById("dataPrivacyFullText");
+  const isOpen = fullText.classList.toggle("show");
+  this.textContent = isOpen ? "Show less" : "Read more";
+});
 const form = document.getElementById("regForm");
 const msg = document.getElementById("formMsg");
 const submitBtn = document.getElementById("submitBtn");
@@ -373,6 +409,7 @@ form.addEventListener("submit", async function (evt) {
   const payload = { eventCode: EVENT_CONFIG.eventCode };
   fd.forEach((value, key) => payload[key] = value);
   payload.consent = document.getElementById("consent").checked;
+  payload.dataPrivacyConsent = document.getElementById("dataPrivacyConsent").checked;
   submitBtn.disabled = true; submitBtn.textContent = "Submitting...";
   try {
     const res = await fetch(EVENT_CONFIG.webAppUrl, { method: "POST", body: JSON.stringify(payload) });

@@ -224,19 +224,42 @@ function renderResult(r) {
   document.getElementById("btnNo").addEventListener("click", () => submitConfirmation(r.registrationId, "no", r.firstName));
 }
 
+// Small helper: retries a fetch-returning-JSON call a couple of times with
+// a short delay before giving up. Apps Script web apps occasionally fail
+// transiently (quota limits, brief timeouts) — a retry papers over those
+// without the participant ever seeing an error.
+async function fetchJsonWithRetry(url, options, attempts = 3, delayMs = 1200) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url, options);
+      const text = await res.text();
+      return JSON.parse(text); // throws if it's not JSON (e.g. an HTML error page)
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 async function submitConfirmation(registrationId, response, firstName) {
   const yesBtn = document.getElementById("btnYes");
   const noBtn = document.getElementById("btnNo");
   const confirmMsg = document.getElementById("confirmMsg");
   yesBtn.disabled = true; noBtn.disabled = true;
-  confirmMsg.className = "msg"; confirmMsg.textContent = "";
+  confirmMsg.className = "msg info";
+  confirmMsg.style.display = "block";
+  confirmMsg.textContent = "Submitting…";
 
   try {
-    const res = await fetch(EVENT_CONFIG.webAppUrl + "?action=confirmAttendancePublic", {
-      method: "POST",
-      body: JSON.stringify({ registrationId, response })
-    });
-    const result = JSON.parse(await res.text());
+    const result = await fetchJsonWithRetry(
+      EVENT_CONFIG.webAppUrl + "?action=confirmAttendancePublic",
+      { method: "POST", body: JSON.stringify({ registrationId, response }) }
+    );
+
     if (!result.ok) {
       confirmMsg.className = "msg error";
       confirmMsg.textContent = result.error || "Something went wrong. Please try again.";
@@ -255,7 +278,7 @@ async function submitConfirmation(registrationId, response, firstName) {
       </div>`;
   } catch (err) {
     confirmMsg.className = "msg error";
-    confirmMsg.textContent = "Something went wrong: " + err.message + ". Please try again.";
+    confirmMsg.textContent = "Something went wrong after a few tries. Please wait a moment and try again.";
     yesBtn.disabled = false; noBtn.disabled = false;
   }
 }
